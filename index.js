@@ -1,21 +1,24 @@
 const express = require('express');
 const app = express();
 const libre = require('libreoffice-convert');
-  const path = require('path');
+const path = require('path');
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' });
 
-  app.post('/convert', upload.single('file'), (req, res) => {
-      const inputFile = path.join(__dirname, req.file.path);
-      const outputFile = path.join(__dirname, 'output.pdf');
+app.post('/convert', upload.single('file'), (req, res) => {
+  const inputFile = path.join(__dirname, req.file.path);
+  const outputFile = path.join(__dirname, 'output.pdf');
 
-      libre.convert(inputFile, outputFile, (err) => {
-          if (err) {
-              return res.status(500).send('Error converting file');
-          }
+  console.log(`Input file path: ${inputFile}`);
+  console.log(`Output file path: ${outputFile}`);
 
-          res.send('File converted successfully!');
-      });
+  libre.convert(inputFile, outputFile, (err) => {
+    if (err) {
+      return res.status(500).send('Error converting file');
+    }
+
+    res.send('File converted successfully!');
   });
+});
 
 app.listen(process.env.PORT || 3000);
