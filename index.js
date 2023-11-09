@@ -44,13 +44,14 @@ app.post('/convert', upload.single('file'), (req, res) => {
             Key: inputFileKey
         };
 
-        s3.getObject(downloadParams, (err, data) => {
-            if (err) {
-                console.log(err);
-                return res.status(500).send('Error downloading file from S3');
-            }
+        const tempFilePath = path.join('/tmp', inputFileKey);
 
-            docxConverter(data.Body, outputFileKey, function(err, result){
+        const file = fs.createWriteStream(tempFilePath);
+
+        s3.getObject(downloadParams).createReadStream().pipe(file);
+
+        file.on('finish', () => {
+            docxConverter(tempFilePath, outputFileKey, function(err, result){
                 if (err) {
                     console.log(err);
                     return res.status(500).send('Error converting file');
