@@ -51,16 +51,18 @@ app.post('/convert', upload.single('file'), (req, res) => {
         s3.getObject(downloadParams).createReadStream().pipe(file);
 
         file.on('finish', () => {
-            docxConverter(tempFilePath, outputFileKey, function(err, result){
+            const outputFilePath = path.join('/tmp', outputFileKey);
+        
+            docxConverter(tempFilePath, outputFilePath, function(err, result){
                 if (err) {
                     console.log(err);
                     return res.status(500).send('Error converting file');
                 }
-
+        
                 const uploadConvertedParams = {
                     Bucket: process.env.CYCLIC_BUCKET_NAME,
                     Key: outputFileKey,
-                    Body: fs.createReadStream(outputFileKey)
+                    Body: fs.createReadStream(outputFilePath)
                 };
 
                 s3.upload(uploadConvertedParams, (err, data) => {
