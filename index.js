@@ -70,10 +70,23 @@ app.post('/convert', upload.single('file'), (req, res) => {
                         console.log(err);
                         return res.status(500).send('Error uploading converted file to S3');
                     }
-
-                    const downloadUrl = data.Location;
-                    res.send({ downloadUrl: downloadUrl });
+                
+                    const urlParams = {
+                        Bucket: process.env.CYCLIC_BUCKET_NAME,
+                        Key: outputFileKey,
+                        Expires: 60 * 5 // URL expires in 5 minutes
+                    };
+                
+                    s3.getSignedUrl('getObject', urlParams, (err, url) => {
+                        if (err) {
+                            console.log(err);
+                            return res.status(500).send('Error generating download URL');
+                        }
+                
+                        res.send({ downloadUrl: url });
+                    });
                 });
+                
             });
         });
     });
