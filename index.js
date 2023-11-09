@@ -1,11 +1,10 @@
 const express = require('express');
 const app = express();
-const libre = require('libreoffice-convert');
+const docxConverter = require('docx-pdf');
 const path = require('path');
 const multer = require('multer');
 const AWS = require('aws-sdk');
 const fs = require('fs');
-const stream = require('stream');
 require('dotenv').config();
 
 console.log("Bucket=",process.env.CYCLIC_BUCKET_NAME);
@@ -51,7 +50,7 @@ app.post('/convert', upload.single('file'), (req, res) => {
                 return res.status(500).send('Error downloading file from S3');
             }
 
-            libre.convert(data.Body, '.pdf', undefined, (err, done) => {
+            docxConverter(data.Body, outputFileKey, function(err, result){
                 if (err) {
                     console.log(err);
                     return res.status(500).send('Error converting file');
@@ -60,7 +59,7 @@ app.post('/convert', upload.single('file'), (req, res) => {
                 const uploadConvertedParams = {
                     Bucket: process.env.CYCLIC_BUCKET_NAME,
                     Key: outputFileKey,
-                    Body: done
+                    Body: fs.createReadStream(outputFileKey)
                 };
 
                 s3.upload(uploadConvertedParams, (err, data) => {
