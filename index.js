@@ -23,7 +23,7 @@ const upload = multer();
 function authenticateToken(req, res, next) {
     const authHeader = req.headers['Authorization'];
     const token = authHeader && authHeader.split(' ')[1];
-    console.log(token);
+    console.log(authHeader);
     if (token == null) return res.sendStatus(401); // if there isn't any token
     
     jwt.verify(token, process.env.BEARER_TOKEN, (err, user) => {
