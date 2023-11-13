@@ -21,7 +21,7 @@ const s3 = new AWS.S3(
 const upload = multer();
 
 function authenticateToken(req, res, next) {
-    const authHeader = req.headers['authorization'];
+    const authHeader = req.headers['Authorization'];
     const token = authHeader && authHeader.split(' ')[1];
     console.log(token);
     if (token == null) return res.sendStatus(401); // if there isn't any token
