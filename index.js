@@ -5,7 +5,6 @@ const path = require('path');
 const multer = require('multer');
 const AWS = require('aws-sdk');
 const fs = require('fs');
-const { expressjwt: expressJwt } = require('express-jwt');
 require('dotenv').config();
 let cors = require("cors");
 app.use(cors());
@@ -20,18 +19,13 @@ const s3 = new AWS.S3(
 
 const upload = multer();
 
-const validateApiKey = expressJwt({
-    secret: process.env.BEARER_TOKEN,
-    algorithms: ['HS256'],
-    getToken: function fromHeaderOrQuerystring (req) {
-      if (req.headers.authorization && req.headers.authorization.split(' ')[0] === 'Bearer') {
-          return req.headers.authorization.split(' ')[1];
-      } else if (req.query && req.query.token) {
-        return req.query.token;
-      }
-      return null;
+function validateApiKey(req, res, next) {
+    const apiKey = req.headers['authorization'].split(' ')[1];
+    if (apiKey !== process.env.API_KEY) {
+        return res.status(401).send('Invalid API key');
     }
-  });
+    next();
+}
 
 app.post('/convert', validateApiKey, upload.single('file'), (req, res) => {
     if (!req.file) {
