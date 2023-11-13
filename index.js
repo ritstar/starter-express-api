@@ -5,6 +5,7 @@ const path = require('path');
 const multer = require('multer');
 const AWS = require('aws-sdk');
 const fs = require('fs');
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 let cors = require("cors");
 app.use(cors());
@@ -19,7 +20,20 @@ const s3 = new AWS.S3(
 
 const upload = multer();
 
-app.post('/convert', upload.single('file'), (req, res) => {
+function authenticateToken(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+  
+    if (token == null) return res.sendStatus(401); // if there isn't any token
+  
+    jwt.verify(token, process.env.BEARER_TOKEN, (err, user) => {
+      if (err) return res.sendStatus(403);
+      req.user = user;
+      next();
+    });
+  }
+
+app.post('/convert', authenticateToken, upload.single('file'), (req, res) => {
     if (!req.file) {
         return res.status(400).send('No file was uploaded.');
     }
