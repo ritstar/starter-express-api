@@ -22,15 +22,20 @@ const upload = multer();
 
 function authenticateToken(req, res, next) {
     const authHeader = req.headers['authorization'];
-    const token = authHeader.split(' ')[1];
+    const token = authHeader && authHeader.split(' ')[1];
+    console.log('Token:', token); // log the token
+
     if (token == null) return res.sendStatus(401); // if there isn't any token
-    
+
     jwt.verify(token, process.env.BEARER_TOKEN, (err, user) => {
+      console.log('Error:', err); // log any error from jwt.verify()
+      console.log('User:', user); // log the user object
+
       if (err) return res.sendStatus(403);
       req.user = user;
       next();
     });
-  }
+}
 
 app.post('/convert', authenticateToken, upload.single('file'), (req, res) => {
     if (!req.file) {
