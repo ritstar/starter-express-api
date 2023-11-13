@@ -6,8 +6,8 @@ const multer = require('multer');
 const AWS = require('aws-sdk');
 const fs = require('fs');
 require('dotenv').config();
-
-console.log("Bucket=",process.env.CYCLIC_BUCKET_NAME);
+let cors = require("cors");
+app.use(cors());
 
 const s3 = new AWS.S3(
 //     {
