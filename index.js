@@ -5,7 +5,7 @@ const path = require('path');
 const multer = require('multer');
 const AWS = require('aws-sdk');
 const fs = require('fs');
-const jwt = require('jsonwebtoken');
+const { expressjwt: expressJwt } = require('express-jwt');
 require('dotenv').config();
 let cors = require("cors");
 app.use(cors());
@@ -20,25 +20,20 @@ const s3 = new AWS.S3(
 
 const upload = multer();
 
-function authenticateToken(req, res, next) {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    console.log('Token:', token); // log the token
-    console.log('Express Bearer Token:', process.env.BEARER_TOKEN); // log the bearer token)
+const validateApiKey = expressJwt({
+    secret: 'abcdef',
+    algorithms: ['HS256'],
+    getToken: function fromHeaderOrQuerystring (req) {
+      if (req.headers.authorization && req.headers.authorization.split(' ')[0] === 'Bearer') {
+          return req.headers.authorization.split(' ')[1];
+      } else if (req.query && req.query.token) {
+        return req.query.token;
+      }
+      return null;
+    }
+  });
 
-    if (token == null) return res.sendStatus(401); // if there isn't any token
-
-    jwt.verify(token, process.env.BEARER_TOKEN, (err, user) => {
-      console.log('Error:', err); // log any error from jwt.verify()
-      console.log('User:', user); // log the user object
-
-      if (err) return res.sendStatus(403);
-      req.user = user;
-      next();
-    });
-}
-
-app.post('/convert', authenticateToken, upload.single('file'), (req, res) => {
+app.post('/convert', validateApiKey, upload.single('file'), (req, res) => {
     if (!req.file) {
         return res.status(400).send('No file was uploaded.');
     }
