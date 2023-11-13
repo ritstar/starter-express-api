@@ -24,6 +24,7 @@ function authenticateToken(req, res, next) {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
     console.log('Token:', token); // log the token
+    console.log('Express Bearer Token:', process.env.BEARER_TOKEN); // log the bearer token)
 
     if (token == null) return res.sendStatus(401); // if there isn't any token
 
