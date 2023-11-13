@@ -21,7 +21,7 @@ const upload = multer();
 
 function validateApiKey(req, res, next) {
     const apiKey = req.headers['authorization'].split(' ')[1];
-    if (apiKey !== process.env.API_KEY) {
+    if (apiKey !== process.env.BEARER_TOKEN) {
         return res.status(401).send('Invalid API key');
     }
     next();
