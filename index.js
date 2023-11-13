@@ -21,7 +21,7 @@ const s3 = new AWS.S3(
 const upload = multer();
 
 const validateApiKey = expressJwt({
-    secret: 'abcdef',
+    secret: process.env.BEARER_TOKEN,
     algorithms: ['HS256'],
     getToken: function fromHeaderOrQuerystring (req) {
       if (req.headers.authorization && req.headers.authorization.split(' ')[0] === 'Bearer') {
