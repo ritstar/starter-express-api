@@ -1,95 +1,62 @@
 const express = require('express');
 const router = express.Router();
-const docxConverter = require('docx-pdf');
 const path = require('path');
 const multer = require('multer');
+const sharp = require('sharp');
 const AWS = require('aws-sdk');
 const fs = require('fs');
 require('dotenv').config();
 
 const s3 = new AWS.S3();
 
-const upload = multer();
+const upload = multer({ storage: multer.memoryStorage() });
 
-function validateApiKey(req, res, next) {
-    const apiKey = req.headers['authorization'].split(' ')[1];
-    if (apiKey !== process.env.BEARER_TOKEN) {
-        return res.status(401).send('Invalid API key');
-    }
-    next();
-}
-
-router.post('/', validateApiKey, upload.single('file'), (req, res) => {
+router.post('/', upload.single('image'), async (req, res) => {
     if (!req.file) {
-        return res.status(400).send('No file was uploaded.');
+        return res.status(400).send('No image was uploaded.');
     }
 
-    const inputFileKey = req.file.originalname;
-    const outputFileKey = `${path.parse(inputFileKey).name}.pdf`;
+    const format = req.query.format;
+    if (!format) {
+        return res.status(400).send('No format specified.');
+    }
 
-    const uploadParams = {
-        Bucket: process.env.CYCLIC_BUCKET_NAME,
-        Key: inputFileKey,
-        Body: req.file.buffer
-    };
+    try {
+        const buffer = await sharp(req.file.buffer).toFormat(format).toBuffer();
 
-    s3.upload(uploadParams, (err, data) => {
-        if (err) {
-            console.log(err);
-            return res.status(500).send('Error uploading file to S3');
-        }
+        const key = `${Date.now().toString()}.${format}`; // use a timestamp for unique file names
 
-        const downloadParams = {
-            Bucket: process.env.CYCLIC_BUCKET_NAME,
-            Key: inputFileKey
+        const uploadParams = {
+            Bucket: process.env.CYCLIC_BUCKET_NAME, // replace with your bucket name
+            Key: key,
+            Body: buffer,
+            ACL: 'public-read' // this will make the uploaded file publicly readable
         };
 
-        const tempFilePath = path.join('/tmp', inputFileKey);
+        await s3.upload(uploadParams).promise();
 
-        const file = fs.createWriteStream(tempFilePath);
+        const urlParams = {
+            Bucket: process.env.CYCLIC_BUCKET_NAME, // replace with your bucket name
+            Key: key,
+            Expires: 300 // 5 minutes
+        };
 
-        s3.getObject(downloadParams).createReadStream().pipe(file);
+        const url = s3.getSignedUrl('getObject', urlParams);
+        res.send({ url: url });
 
-        file.on('finish', () => {
-            const outputFilePath = path.join('/tmp', outputFileKey);
-        
-            docxConverter(tempFilePath, outputFilePath, function(err, result){
-                if (err) {
-                    console.log(err);
-                    return res.status(500).send('Error converting file');
-                }
-        
-                const uploadConvertedParams = {
-                    Bucket: process.env.CYCLIC_BUCKET_NAME,
-                    Key: outputFileKey,
-                    Body: fs.createReadStream(outputFilePath)
-                };
-
-                s3.upload(uploadConvertedParams, (err, data) => {
-                    if (err) {
-                        console.log(err);
-                        return res.status(500).send('Error uploading converted file to S3');
-                    }
-                
-                    const urlParams = {
-                        Bucket: process.env.CYCLIC_BUCKET_NAME,
-                        Key: outputFileKey,
-                        Expires: 60 * 5 // URL expires in 5 minutes
-                    };
-                
-                    s3.getSignedUrl('getObject', urlParams, (err, url) => {
-                        if (err) {
-                            console.log(err);
-                            return res.status(500).send('Error generating download URL');
-                        }
-                
-                        res.send({ downloadUrl: url });
-                    });
-                });
-                
-            });
-        });
-    });
+        // Schedule deletion of the image after 30 minutes
+        setTimeout(async () => {
+            try {
+                await s3.deleteObject({ Bucket: 'your-bucket-name', Key: key }).promise();
+                console.log(`Successfully deleted image ${key} from S3`);
+            } catch (err) {
+                console.error(`Error deleting image ${key} from S3:`, err);
+            }
+        }, 30 * 60 * 1000); // 30 minutes
+    } catch (err) {
+        console.log(err);
+        res.status(500).send('Error converting and uploading image.');
+    }
 });
 
 module.exports = router;
