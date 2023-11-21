@@ -11,7 +11,15 @@ const s3 = new AWS.S3();
 
 const upload = multer({ storage: multer.memoryStorage() });
 
-router.post('/', upload.single('image'), async (req, res) => {
+function validateApiKey(req, res, next) {
+    const apiKey = req.headers['authorization'].split(' ')[1];
+    if (apiKey !== process.env.BEARER_TOKEN) {
+        return res.status(401).send('Invalid API key');
+    }
+    next();
+}
+
+router.post('/', validateApiKey, upload.single('image'), async (req, res) => {
     if (!req.file) {
         return res.status(400).send('No image was uploaded.');
     }
