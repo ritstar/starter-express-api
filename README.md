@@ -1,5 +1,5 @@
 # Express.js API for Image Conversion
-This is an Express.js API that allows you to convert any image format like png/jpg/svg to any other format. The API is built using Node.js and uses the Sharp library for image processing.
+This is an Express.js API that allows you to convert any image format like png/jpg/svg to any other format. The API is built using Node.js and uses the [Sharp](https://www.npmjs.com/package/sharp) library for image processing.
 
 # Installation
 1. Clone this repository.
