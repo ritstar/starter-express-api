@@ -42,8 +42,7 @@ router.post('/', validateApiKey, upload.single('image'), async (req, res) => {
             const uploadParams = {
                 Bucket: process.env.CYCLIC_BUCKET_NAME, // replace with your bucket name
                 Key: key,
-                Body: buffer,
-                ACL: 'public-read' // this will make the uploaded file publicly readable
+                Body: buffer
             };
 
             await s3.upload(uploadParams).promise();
