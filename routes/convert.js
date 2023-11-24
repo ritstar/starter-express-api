@@ -1,34 +1,24 @@
 const express = require('express');
 const router = express.Router();
-const path = require('path');
 const multer = require('multer');
 const Jimp = require('jimp');
 const AWS = require('aws-sdk');
-const fs = require('fs');
 require('dotenv').config();
-
+const validateApiKey = require('./helper_functions/validateApiKey');
 const s3 = new AWS.S3();
 
 const upload = multer({ storage: multer.memoryStorage() });
 
-function validateApiKey(req, res, next) {
-    const apiKey = req.headers['authorization'].split(' ')[1];
-    if (apiKey !== process.env.BEARER_TOKEN) {
-        return res.status(401).send({'error' : 'Invalid API key'});
-    }
-    next();
-}
-
 router.post('/', validateApiKey, upload.single('image'), async (req, res) => {
     if (!req.file) {
-        return res.status(400).send({'error' : 'No image was uploaded.'});
+        return res.status(400).send({ 'error': 'No image was uploaded.' });
     }
 
     const validFormats = ['jpeg', 'png', 'bmp', 'tiff', 'gif'];
 
     const format = req.query.format;
     if (!format || !validFormats.includes(format.toLowerCase())) {
-        return res.status(400).send({'error' : 'Invalid or no format specified.'});
+        return res.status(400).send({ 'error': 'Invalid or no format specified.' });
     }
 
     try {
@@ -36,7 +26,7 @@ router.post('/', validateApiKey, upload.single('image'), async (req, res) => {
         image.getBuffer(Jimp[`MIME_${format.toUpperCase()}`], async (err, buffer) => {
             if (err) {
                 console.log(err);
-                return res.status(500).send({'error' :'Error converting image.'});
+                return res.status(500).send({ 'error': 'Error converting image.' });
             }
 
             const key = `${Date.now().toString()}.${format}`; // use a timestamp for unique file names
