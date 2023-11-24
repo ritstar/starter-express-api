@@ -4,7 +4,7 @@ const router = express.Router();
   
 router.post('/', validateApiKey, async (req, res) => {
     const { username, password } = req.body;
-    if (username === 'riteshjha0270@gmail.com' && password === 'admin') {
+    if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
         req.session.username = username;
         res.status(200).json({
             message: 'Login Successful'
