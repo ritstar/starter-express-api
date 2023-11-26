@@ -1,8 +1,8 @@
 const express = require('express');
 const ytdl = require('ytdl-core');
 const router = express.Router();
-
-router.get('/', async (req, res) => {
+const validateApiKey = require('./helper_functions/validateApiKey');
+router.post('/',validateApiKey, async (req, res) => {
     const url = req.query.url;
     if (!url) {
         return res.status(400).send({ 'error': 'No url was provided.' });
