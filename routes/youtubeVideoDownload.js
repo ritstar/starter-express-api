@@ -14,7 +14,7 @@ router.post('/',validateApiKey, async (req, res) => {
         res.send({ url: format.url, formats: info.formats, title: info.videoDetails.title, thumbnail: info.videoDetails.thumbnails[0].url, description: info.videoDetails.description, author: info.videoDetails.author.name, authorUrl: info.videoDetails.author.user_url });
     } catch (err) {
         console.error(err);
-        res.status(500).send('Error retrieving video download url.');
+        res.status(500).send({'error' : 'Error retrieving video download url.'});
     }
 });
 
