@@ -10,6 +10,11 @@ router.post('/', validateApiKey, async (req, res) => {
             message: 'Login Successful'
         });
     }
+    else{
+        res.status(401).json({
+            message: 'Invalid Credentials'
+        });
+    }
 }
 );
 
